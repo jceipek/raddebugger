@@ -1251,10 +1251,8 @@ os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
         // emit if usable
         if (usable_file){
           info_out->name = push_str8_copy(arena, str8_cstring(file_name));
-
-          int fd = dirfd(mac_iter->dir);
           struct stat info;
-          if (fstatat(fd, entry->d_name, &info, 0) == 0)
+          if (fstatat(mac_iter->fd, entry->d_name, &info, 0) == 0)
           {
             mac_file_properties_from_stat(&info_out->props, &info);
           }

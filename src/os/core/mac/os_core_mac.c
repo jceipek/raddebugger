@@ -90,9 +90,9 @@ internal void
 mac_file_properties_from_stat(FileProperties *out, struct stat *in){
   MemoryZeroStruct(out);
   out->size = in->st_size;
-  mac_dense_time_from_timespec(&out->created, &in->st_ctim);
-  mac_dense_time_from_timespec(&out->modified, &in->st_mtim);
-  if ((in->st_mode & S_IFDIR) != 0){
+  mac_dense_time_from_timespec(&out->created, &in->st_birthtimespec);
+  mac_dense_time_from_timespec(&out->modified, &in->st_mtimespec);
+  if ((in->st_mode & S_IFMT) == S_IFDIR){
     out->flags |= FilePropertyFlag_IsFolder;
   }
 }
@@ -121,6 +121,14 @@ mac_string_from_signal(int signum){
     {
       result = str8_lit("SIGCONT");
     }break;
+    case SIGEMT:
+    {
+      result = str8_lit("SIGEMT");
+    }break;
+    case SIGEV_NONE:
+    {
+      result = str8_lit("SIGEV_NONE");
+    }break;
     case SIGFPE:
     {
       result = str8_lit("SIGFPE");
@@ -145,17 +153,17 @@ mac_string_from_signal(int signum){
     {
       result = str8_lit("SIGKILL");
     }break;
-    case SIGPIPE:
-    {
-      result = str8_lit("SIGPIPE");
-    }break;
     case SIGPROF:
     {
       result = str8_lit("SIGPROF");
     }break;
-    case SIGPWR:
+    case SIGINFO:
     {
-      result = str8_lit("SIGPWR");
+      result = str8_lit("SIGINFO");
+    }break;
+    case SIGPIPE:
+    {
+      result = str8_lit("SIGPIPE");
     }break;
     case SIGQUIT:
     {
@@ -164,10 +172,6 @@ mac_string_from_signal(int signum){
     case SIGSEGV:
     {
       result = str8_lit("SIGSEGV");
-    }break;
-    case SIGSTKFLT:
-    {
-      result = str8_lit("SIGSTKFLT");
     }break;
     case SIGSTOP:
     {
@@ -268,6 +272,10 @@ mac_string_from_errno(int error_number){
     case EBADF:
     {
       result = str8_lit("EBADF");
+    }break;
+    case EBADRPC:
+    {
+      result = str8_lit("EBADRPC");
     }break;
     case ECHILD:
     {
@@ -401,66 +409,6 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("EIDRM");
     }break;
-    case ECHRNG:
-    {
-      result = str8_lit("ECHRNG");
-    }break;
-    case EL2NSYNC:
-    {
-      result = str8_lit("EL2NSYNC");
-    }break;
-    case EL3HLT:
-    {
-      result = str8_lit("EL3HLT");
-    }break;
-    case EL3RST:
-    {
-      result = str8_lit("EL3RST");
-    }break;
-    case ELNRNG:
-    {
-      result = str8_lit("ELNRNG");
-    }break;
-    case EUNATCH:
-    {
-      result = str8_lit("EUNATCH");
-    }break;
-    case ENOCSI:
-    {
-      result = str8_lit("ENOCSI");
-    }break;
-    case EL2HLT:
-    {
-      result = str8_lit("EL2HLT");
-    }break;
-    case EBADE:
-    {
-      result = str8_lit("EBADE");
-    }break;
-    case EBADR:
-    {
-      result = str8_lit("EBADR");
-    }break;
-    case EXFULL:
-    {
-      result = str8_lit("EXFULL");
-    }break;
-    case ENOANO:
-    {
-      result = str8_lit("ENOANO");
-    }break;
-    case EBADRQC:
-    {
-      result = str8_lit("EBADRQC");
-    }break;
-    case EBADSLT:
-    {
-      result = str8_lit("EBADSLT");
-    }break;
-    case EBFONT:
-    {
-      result = str8_lit("EBFONT");
-    }break;
     case ENOSTR:
     {
       result = str8_lit("ENOSTR");
@@ -477,14 +425,6 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("ENOSR");
     }break;
-    case ENONET:
-    {
-      result = str8_lit("ENONET");
-    }break;
-    case ENOPKG:
-    {
-      result = str8_lit("ENOPKG");
-    }break;
     case EREMOTE:
     {
       result = str8_lit("EREMOTE");
@@ -493,17 +433,21 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("ENOLINK");
     }break;
-    case EADV:
+    case EAUTH:
     {
-      result = str8_lit("EADV");
+      result = str8_lit("EAUTH");
     }break;
-    case ESRMNT:
+    case EBADARCH:
     {
-      result = str8_lit("ESRMNT");
+      result = str8_lit("EBADARCH");
     }break;
-    case ECOMM:
+    case EBADEXEC:
     {
-      result = str8_lit("ECOMM");
+      result = str8_lit("EBADEXEC");
+    }break;
+    case EBADMACHO:
+    {
+      result = str8_lit("EBADMACHO");
     }break;
     case EPROTO:
     {
@@ -513,10 +457,6 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("EMULTIHOP");
     }break;
-    case EDOTDOT:
-    {
-      result = str8_lit("EDOTDOT");
-    }break;
     case EBADMSG:
     {
       result = str8_lit("EBADMSG");
@@ -525,49 +465,9 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("EOVERFLOW");
     }break;
-    case ENOTUNIQ:
-    {
-      result = str8_lit("ENOTUNIQ");
-    }break;
-    case EBADFD:
-    {
-      result = str8_lit("EBADFD");
-    }break;
-    case EREMCHG:
-    {
-      result = str8_lit("EREMCHG");
-    }break;
-    case ELIBACC:
-    {
-      result = str8_lit("ELIBACC");
-    }break;
-    case ELIBBAD:
-    {
-      result = str8_lit("ELIBBAD");
-    }break;
-    case ELIBSCN:
-    {
-      result = str8_lit("ELIBSCN");
-    }break;
-    case ELIBMAX:
-    {
-      result = str8_lit("ELIBMAX");
-    }break;
-    case ELIBEXEC:
-    {
-      result = str8_lit("ELIBEXEC");
-    }break;
     case EILSEQ:
     {
       result = str8_lit("EILSEQ");
-    }break;
-    case ERESTART:
-    {
-      result = str8_lit("ERESTART");
-    }break;
-    case ESTRPIPE:
-    {
-      result = str8_lit("ESTRPIPE");
     }break;
     case EUSERS:
     {
@@ -689,57 +589,13 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("ESTALE");
     }break;
-    case EUCLEAN:
-    {
-      result = str8_lit("EUCLEAN");
-    }break;
-    case ENOTNAM:
-    {
-      result = str8_lit("ENOTNAM");
-    }break;
-    case ENAVAIL:
-    {
-      result = str8_lit("ENAVAIL");
-    }break;
-    case EISNAM:
-    {
-      result = str8_lit("EISNAM");
-    }break;
-    case EREMOTEIO:
-    {
-      result = str8_lit("EREMOTEIO");
-    }break;
     case EDQUOT:
     {
       result = str8_lit("EDQUOT");
     }break;
-    case ENOMEDIUM:
-    {
-      result = str8_lit("ENOMEDIUM");
-    }break;
-    case EMEDIUMTYPE:
-    {
-      result = str8_lit("EMEDIUMTYPE");
-    }break;
     case ECANCELED:
     {
       result = str8_lit("ECANCELED");
-    }break;
-    case ENOKEY:
-    {
-      result = str8_lit("ENOKEY");
-    }break;
-    case EKEYEXPIRED:
-    {
-      result = str8_lit("EKEYEXPIRED");
-    }break;
-    case EKEYREVOKED:
-    {
-      result = str8_lit("EKEYREVOKED");
-    }break;
-    case EKEYREJECTED:
-    {
-      result = str8_lit("EKEYREJECTED");
     }break;
     case EOWNERDEAD:
     {
@@ -749,13 +605,53 @@ mac_string_from_errno(int error_number){
     {
       result = str8_lit("ENOTRECOVERABLE");
     }break;
-    case ERFKILL:
+    case EDEVERR:
     {
-      result = str8_lit("ERFKILL");
+      result = str8_lit("EDEVERR");
     }break;
-    case EHWPOISON:
+    case EFTYPE:
     {
-      result = str8_lit("EHWPOISON");
+      result = str8_lit("EFTYPE");
+    }break;
+    case ELAST:
+    {
+      result = str8_lit("ELAST");
+    }break;
+    case ENEEDAUTH:
+    {
+      result = str8_lit("ENEEDAUTH");
+    }break;
+    case ENOATTR:
+    {
+      result = str8_lit("ENOATTR");
+    }break;
+    case ENOPOLICY:
+    {
+      result = str8_lit("ENOPOLICY");
+    }break;
+    case ENOTSUP:
+    {
+      result = str8_lit("ENOTSUP");
+    }break;
+    case EPROCLIM:
+    {
+      result = str8_lit("EPROCLIM");
+    }break;
+    case EPROCUNAVAIL:
+    {
+      result = str8_lit("EPROCUNAVAIL");
+    }break;
+    case EPWROFF:
+    {
+      result = str8_lit("EPWROFF");
+    }break;
+    case ERPCMISMATCH:
+    {
+      result = str8_lit("ERPCMISMATCH");
+    }break;
+    case ESHLIBVERS:
+    {
+      result = str8_lit("ESHLIBVERS");
     }break;
   }
   return(result);
@@ -801,7 +697,7 @@ mac_thread_base(void *ptr){
 }
 
 internal void
-mac_safe_call_sig_handler(int){
+mac_safe_call_sig_handler(int _){
   MAC_SafeCallChain *chain = mac_safe_call_chain;
   if (chain != 0 && chain->fail_handler != 0){
     chain->fail_handler(chain->ptr);
@@ -840,7 +736,7 @@ os_init(int argc, char **argv)
   mac_perm_arena = perm_arena;
   
   // NOTE(allen): Initialize Paths
-  mac_initial_path = os_get_path(mac_perm_arena, OS_SystemPath_Current);
+  mac_initial_path = os_string_from_system_path(mac_perm_arena, OS_SystemPath_Current);
   
   // NOTE(rjf): Setup command line args
   mac_cmd_line_args = os_string_list_from_argcv(mac_perm_arena, argc, argv);
@@ -885,16 +781,17 @@ os_release(void *ptr, U64 size){
   munmap(ptr, size);
 }
 
-internal void
+internal B32
 os_set_large_pages(B32 flag)
 {
-  NotImplemented;
+  // NotImplemented;
+  return 0;
 }
 
 internal B32
 os_large_pages_enabled(void)
 {
-  NotImplemented;
+  // NotImplemented;
   return 0;
 }
 
@@ -939,7 +836,7 @@ os_machine_name(void){
     for (S64 cap = 4096, r = 0;
          r < 4;
          cap *= 2, r += 1){
-      scratch.restore();
+      arena_pop_to(scratch.arena, scratch.pos); // XXX(JULIAN): Is this correct arena usage?
       buffer = push_array_no_zero(scratch.arena, U8, cap);
       size = gethostname((char*)buffer, cap);
       if (size < cap){
@@ -973,14 +870,22 @@ internal U64
 os_allocation_granularity(void)
 {
   // On linux there is no equivalent of "dwAllocationGranularity"
-  os_page_size();
+  return os_page_size();
 }
 
 internal U64
 os_logical_core_count(void)
 {
   // TODO(rjf): check this
-  return get_nprocs();
+  // NOTE(jceipek): This command can fail (see https://developer.apple.com/documentation/kernel/1387446-sysctlbyname)
+  // and is slow (see https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man3/sysctl.3.html)
+  // Better might be to use sysctlnametomib at initialization, followed by sysctl at request time.
+  int count;
+  size_t count_len = sizeof(count);
+  // NOTE(jceipek): hw.logicalcpu depends on the power management mode of the computer.
+  int success = sysctlbyname("hw.logicalcpu", &count, &count_len, NULL, 0);
+  AssertAlways(success == 0);
+  return count;
 }
 
 ////////////////////////////////
@@ -1034,25 +939,16 @@ os_string_list_from_system_path(Arena *arena, OS_SystemPath path, String8List *o
         first = false;
         
         // get self string
-        B32 got_final_result = false;
         U8 *buffer = 0;
-        int size = 0;
-        for (S64 cap = PATH_MAX, r = 0;
-             r < 4;
-             cap *= 2, r += 1){
-          scratch.restore();
-          buffer = push_array_no_zero(scratch.arena, U8, cap);
-          size = readlink("/proc/self/exe", (char*)buffer, cap);
-          if (size < cap){
-            got_final_result = true;
-            break;
-          }
-        }
+        U32 required_size = 0;
+        _NSGetExecutablePath(NULL, &required_size);
+        buffer = push_array_no_zero(scratch.arena, U8, (S64)required_size);
+        _NSGetExecutablePath((char*)buffer, &required_size);
         
         // save string
-        if (got_final_result && size > 0){
-          String8 full_name = str8(buffer, size);
-          String8 name_chopped = string_path_chop_last_slash(full_name);
+        if (required_size > 0){
+          String8 full_name = str8(buffer, required_size);
+          String8 name_chopped = str8_chop_last_slash(full_name);
           name = push_str8_copy(mac_perm_arena, name_chopped);
         }
         
@@ -1112,25 +1008,91 @@ os_exit_process(S32 exit_code){
 
 //- rjf: files
 
+internal U64
+mac_handle_from_file_descriptor(int file_descriptor)
+{
+  // TODO(jceipek): Note that 0 is a valid descriptor so we offset by 1
+  U64 result = ((U64)file_descriptor) + 1;
+  return result;
+}
+
+internal int
+mac_file_descriptor_from_handle(OS_Handle file)
+{
+  // TODO(jceipek): Note that 0 is a valid descriptor so we offset by 1
+  // -1 is invalid, so we don't need to branch
+  int result = (int)(file.u64[0] - 1);
+  return result;
+}
+
+
 internal OS_Handle
 os_file_open(OS_AccessFlags flags, String8 path)
 {
-  OS_Handle file = {0};
-  NotImplemented;
-  return file;
+  OS_Handle result = {0};
+  int oflag = 0;
+  // NOTE(jceipek): Read and write flags do not compose for some reason
+  if((flags & OS_AccessFlag_Read) && !(flags & OS_AccessFlag_Write))
+  {
+    oflag |= O_RDONLY;
+  }
+  else if(!(flags & OS_AccessFlag_Read) && (flags & OS_AccessFlag_Write))
+  {
+    oflag |= O_WRONLY;
+  }
+  else if((flags & OS_AccessFlag_Read) && (flags & OS_AccessFlag_Write))
+  {
+    oflag |= O_RDWR;
+  }
+
+  // TODO(jceipek): What should the semantics be here?
+  if(flags & OS_AccessFlag_Execute) { NotImplemented; }
+
+  // TODO(jceipek): What should the semantics be here?
+  if(flags & OS_AccessFlag_Shared)
+  {
+    oflag |= O_SHLOCK;
+  }
+  else
+  {
+    oflag |= O_EXLOCK;
+  }
+
+  mode_t mode = 0;
+  if (flags & OS_AccessFlag_Read) { mode |= S_IRUSR; }
+  if (flags & OS_AccessFlag_Write) { mode |= S_IWUSR; }
+  if (flags & OS_AccessFlag_Execute) { mode |= S_IXUSR; }
+
+  if(flags & OS_AccessFlag_Write)   { oflag |= O_CREAT; }
+  int fd = open((const char*)path.str, oflag, mode);
+  result.u64[0] = mac_handle_from_file_descriptor(fd);
+  return result;
 }
 
 internal void
 os_file_close(OS_Handle file)
 {
-  NotImplemented;
+  int fd = mac_file_descriptor_from_handle(file);
+  if (fd > -1)
+  {
+    close(fd);
+  }
 }
 
 internal U64
 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 {
-  NotImplemented;
-  return 0;
+  U64 result = 0;
+  int fd = mac_file_descriptor_from_handle(file);
+  if (fd > -1)
+  {
+    ssize_t amount_read = pread(fd, out_data, dim_1u64(rng), rng.min);
+    if (amount_read > 0)
+    {
+      result = (U64)amount_read;
+    }
+  }
+  return result;
 }
 
 internal void
@@ -1149,7 +1111,12 @@ internal FileProperties
 os_properties_from_file(OS_Handle file)
 {
   FileProperties props = {0};
-  NotImplemented;
+  int fd = mac_file_descriptor_from_handle(file);
+  struct stat info;
+  if (fstat(fd, &info) == 0)
+  {
+    mac_file_properties_from_stat(&props, &info);
+  }
   return props;
 }
 
@@ -1167,7 +1134,7 @@ os_delete_file_at_path(String8 path)
 {
   Temp scratch = scratch_begin(0, 0);
   B32 result = false;
-  String8 name_copy = push_str8_copy(scratch.arena, name);
+  String8 name_copy = push_str8_copy(scratch.arena, path);
   if (remove((char*)name_copy.str) != -1){
     result = true;
   }
@@ -1232,21 +1199,83 @@ os_file_map_view_close(OS_Handle map, void *ptr)
 internal OS_FileIter *
 os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags)
 {
-  NotImplemented;
-  return 0;
+  OS_FileIter *iter = push_array(arena, OS_FileIter, 1);
+  iter->flags = flags;
+  MAC_FileIter *mac_iter = (MAC_FileIter*)iter->memory;
+  mac_iter->dir = opendir((const char *)path.str);
+  mac_iter->fd = dirfd(mac_iter->dir);
+  return iter;
 }
 
 internal B32
 os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
 {
-  NotImplemented;
-  return 0;
+  B32 result = 0;
+  OS_FileIterFlags flags = iter->flags;
+  MAC_FileIter *mac_iter = (MAC_FileIter*)iter->memory;
+  if (!(flags & OS_FileIterFlag_Done) && mac_iter->dir != NULL)
+  {
+    struct dirent *entry = NULL;
+    do
+    {
+      // check is usable
+      B32 usable_file = 1;
+
+      entry = readdir(mac_iter->dir);
+      if (entry) {
+        char *file_name = entry->d_name;
+        // NOTE(JULIAN): We can't expect this to be useful on all filesystems
+        char file_type = entry->d_type;
+        if (file_name[0] == '.'){
+          if (flags & OS_FileIterFlag_SkipHiddenFiles){
+            usable_file = 0;
+          }
+          else if (file_name[1] == 0){
+            usable_file = 0;
+          }
+          else if (file_name[1] == '.' && file_name[2] == 0){
+            usable_file = 0;
+          }
+        }
+        if (file_type == DT_DIR) {
+          if (flags & OS_FileIterFlag_SkipFolders){
+            usable_file = 0;
+          }
+        }
+        else{ // XXX(JULIAN): What filetype is a "file"?
+          if (flags & OS_FileIterFlag_SkipFiles){
+            usable_file = 0;
+          }
+        }
+
+        // emit if usable
+        if (usable_file){
+          info_out->name = push_str8_copy(arena, str8_cstring(file_name));
+          struct stat info;
+          if (fstatat(mac_iter->fd, entry->d_name, &info, 0) == 0)
+          {
+            mac_file_properties_from_stat(&info_out->props, &info);
+          }
+
+          result = 1;
+          if (!readdir(mac_iter->dir)){
+            iter->flags |= OS_FileIterFlag_Done;
+          }
+          break;
+        }
+      }
+    } while((entry = readdir(mac_iter->dir)));
+  }
+  return result;
 }
 
 internal void
 os_file_iter_end(OS_FileIter *iter)
 {
-  NotImplemented;
+  MAC_FileIter *mac_iter = (MAC_FileIter*)iter->memory;
+  if (mac_iter->dir) {
+    closedir(mac_iter->dir);
+  }
 }
 
 //- rjf: directory creation
@@ -1256,7 +1285,7 @@ os_make_directory(String8 path)
 {
   Temp scratch = scratch_begin(0, 0);
   B32 result = false;
-  String8 name_copy = push_str8_copy(scratch.arena, name);
+  String8 name_copy = push_str8_copy(scratch.arena, path);
   if (mkdir((char*)name_copy.str, 0777) != -1){
     result = true;
   }
@@ -1372,7 +1401,7 @@ os_sleep_milliseconds(U32 msec){
 //~ rjf: @os_hooks Child Processes (Implemented Per-OS)
 
 internal B32
-os_launch_process(OS_LaunchOptions *options){
+os_launch_process(OS_LaunchOptions *options, OS_Handle *handle_out){
   // TODO(allen): I want to redo this API before I bother implementing it here
   NotImplemented;
   return(false);
@@ -1406,7 +1435,7 @@ os_launch_thread(OS_ThreadFunctionType *func, void *ptr, void *params){
 
 internal void
 os_release_thread_handle(OS_Handle thread){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(thread.id);
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(thread.u64[0]);
   // remove my bit
   U32 result = __sync_fetch_and_and(&entity->reference_mask, ~0x1);
   // if the other bit is also gone, free entity
@@ -1446,20 +1475,20 @@ os_mutex_alloc(void){
 
 internal void
 os_mutex_release(OS_Handle mutex){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(mutex.id);
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(mutex.u64[0]);
   pthread_mutex_destroy(&entity->mutex);
   mac_free_entity(entity);
 }
 
 internal void
 os_mutex_take_(OS_Handle mutex){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(mutex.id);
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(mutex.u64[0]);
   pthread_mutex_lock(&entity->mutex);
 }
 
 internal void
 os_mutex_drop_(OS_Handle mutex){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(mutex.id);
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(mutex.u64[0]);
   pthread_mutex_unlock(&entity->mutex);
 }
 
@@ -1527,18 +1556,19 @@ os_condition_variable_alloc(void){
 
 internal void
 os_condition_variable_release(OS_Handle cv){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(cv.id);
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(cv.u64[0]);
   pthread_cond_destroy(&entity->cond);
   mac_free_entity(entity);
 }
 
 internal B32
 os_condition_variable_wait_(OS_Handle cv, OS_Handle mutex, U64 endt_us){
+  NotImplemented;
   B32 result = false;
-  MAC_Entity *entity_cond = (MAC_Entity*)PtrFromInt(cv.id);
-  MAC_Entity *entity_mutex = (MAC_Entity*)PtrFromInt(mutex.id);
+  MAC_Entity *entity_cond = (MAC_Entity*)PtrFromInt(cv.u64[0]);
+  MAC_Entity *entity_mutex = (MAC_Entity*)PtrFromInt(mutex.u64[0]);
   // TODO(allen): implement the time control
-  pthread_cond_timedwait(&entity_cond->cond, &entity_mutex->mutex);
+  // pthread_cond_timedwait(&entity_cond->cond, &entity_mutex->mutex);
   return(result);
 }
 
@@ -1558,14 +1588,14 @@ os_condition_variable_wait_rw_w_(OS_Handle cv, OS_Handle mutex_rw, U64 endt_us)
 
 internal void
 os_condition_variable_signal_(OS_Handle cv){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(cv.id);
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(cv.u64[0]);
   pthread_cond_signal(&entity->cond);
 }
 
 internal void
 os_condition_variable_broadcast_(OS_Handle cv){
-  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(cv.id);
-  DontCompile;
+  MAC_Entity *entity = (MAC_Entity*)PtrFromInt(cv.u64[0]);
+  NotImplemented;
 }
 
 //- rjf: cross-process semaphores
@@ -1599,7 +1629,7 @@ os_semaphore_close(OS_Handle semaphore)
 }
 
 internal B32
-os_semaphore_take(OS_Handle semaphore)
+os_semaphore_take(OS_Handle semaphore, U64 endt_us)
 {
   NotImplemented;
   return 0;
@@ -1629,7 +1659,7 @@ internal VoidProc *
 os_library_load_proc(OS_Handle lib, String8 name)
 {
   Temp scratch = scratch_begin(0, 0);
-  void *so = (void *)lib.id;
+  void *so = (void *)lib.u64[0];
   char *name_cstr = (char *)push_str8_copy(scratch.arena, name).str;
   VoidProc *proc = (VoidProc *)dlsym(so, name_cstr);
   scratch_end(scratch);
@@ -1639,7 +1669,7 @@ os_library_load_proc(OS_Handle lib, String8 name)
 internal void
 os_library_close(OS_Handle lib)
 {
-  void *so = (void *)lib.id;
+  void *so = (void *)lib.u64[0];
   dlclose(so);
 }
 

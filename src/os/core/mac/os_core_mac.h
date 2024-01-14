@@ -5,15 +5,16 @@
 #define MAC_H
 
 ////////////////////////////////
-//~ NOTE(allen): Get all these linux includes
+//~ NOTE(jceipek): Mac includes
 
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include <time.h>
 #include <dirent.h>
 #include <pthread.h>
@@ -21,11 +22,13 @@
 #include <signal.h>
 #include <errno.h>
 #include <dlfcn.h>
-#include <sys/sysinfo.h>
+#include <dirent.h>
+#include <mach-o/dyld.h>
 
 ////////////////////////////////
 //~ NOTE(allen): File Iterator
 
+typedef struct MAC_FileIter MAC_FileIter;
 struct MAC_FileIter{
   int fd;
   DIR *dir;
@@ -35,13 +38,16 @@ StaticAssert(sizeof(Member(OS_FileIter, memory)) >= sizeof(MAC_FileIter), file_i
 ////////////////////////////////
 //~ NOTE(allen): Threading Entities
 
-enum MAC_EntityKind{
+typedef enum MAC_EntityKind
+{
   MAC_EntityKind_Null,
   MAC_EntityKind_Thread,
   MAC_EntityKind_Mutex,
   MAC_EntityKind_ConditionVariable,
-};
+}
+MAC_EntityKind;
 
+typedef struct MAC_Entity MAC_Entity;
 struct MAC_Entity{
   MAC_Entity *next;
   MAC_EntityKind kind;
@@ -60,6 +66,7 @@ struct MAC_Entity{
 ////////////////////////////////
 //~ NOTE(allen): Safe Call Chain
 
+typedef struct MAC_SafeCallChain MAC_SafeCallChain;
 struct MAC_SafeCallChain{
   MAC_SafeCallChain *next;
   OS_ThreadFunctionType *fail_handler;
