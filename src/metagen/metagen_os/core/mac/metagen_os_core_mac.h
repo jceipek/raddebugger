@@ -5,12 +5,13 @@
 #define MAC_H
 
 ////////////////////////////////
-//~ NOTE(allen): Get all these linux includes
+//~ NOTE(jceipek): Mac includes
 
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -21,8 +22,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <dlfcn.h>
-#include <sys/sysctl.h>
-// #include <sys/sysinfo.h>
+#include <dirent.h>
+#include <mach-o/dyld.h>
 
 ////////////////////////////////
 //~ NOTE(allen): File Iterator

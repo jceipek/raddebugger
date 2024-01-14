@@ -92,7 +92,7 @@ mac_file_properties_from_stat(FileProperties *out, struct stat *in){
   out->size = in->st_size;
   mac_dense_time_from_timespec(&out->created, &in->st_birthtimespec);
   mac_dense_time_from_timespec(&out->modified, &in->st_mtimespec);
-  if ((in->st_mode & S_IFDIR) != 0){
+  if ((in->st_mode & S_IFMT) == S_IFDIR){
     out->flags |= FilePropertyFlag_IsFolder;
   }
 }
@@ -939,24 +939,15 @@ os_string_list_from_system_path(Arena *arena, OS_SystemPath path, String8List *o
         first = false;
         
         // get self string
-        B32 got_final_result = false;
         U8 *buffer = 0;
-        int size = 0;
-        for (S64 cap = PATH_MAX, r = 0;
-             r < 4;
-             cap *= 2, r += 1){
-          arena_pop_to(scratch.arena, scratch.pos); // XXX(JULIAN): Is this correct arena usage?
-          buffer = push_array_no_zero(scratch.arena, U8, cap);
-          size = readlink("/proc/self/exe", (char*)buffer, cap);
-          if (size < cap){
-            got_final_result = true;
-            break;
-          }
-        }
+        U32 required_size = 0;
+        _NSGetExecutablePath(NULL, &required_size);
+        buffer = push_array_no_zero(scratch.arena, U8, (S64)required_size);
+        _NSGetExecutablePath((char*)buffer, &required_size);
         
         // save string
-        if (got_final_result && size > 0){
-          String8 full_name = str8(buffer, size);
+        if (required_size > 0){
+          String8 full_name = str8(buffer, required_size);
           String8 name_chopped = str8_chop_last_slash(full_name);
           name = push_str8_copy(mac_perm_arena, name_chopped);
         }
@@ -1017,25 +1008,91 @@ os_exit_process(S32 exit_code){
 
 //- rjf: files
 
+internal U64
+mac_handle_from_file_descriptor(int file_descriptor)
+{
+  // TODO(jceipek): Note that 0 is a valid descriptor so we offset by 1
+  U64 result = ((U64)file_descriptor) + 1;
+  return result;
+}
+
+internal int
+mac_file_descriptor_from_handle(OS_Handle file)
+{
+  // TODO(jceipek): Note that 0 is a valid descriptor so we offset by 1
+  // -1 is invalid, so we don't need to branch
+  int result = (int)(file.u64[0] - 1);
+  return result;
+}
+
+
 internal OS_Handle
 os_file_open(OS_AccessFlags flags, String8 path)
 {
-  OS_Handle file = {0};
-  NotImplemented;
-  return file;
+  OS_Handle result = {0};
+  int oflag = 0;
+  // NOTE(jceipek): Read and write flags do not compose for some reason
+  if((flags & OS_AccessFlag_Read) && !(flags & OS_AccessFlag_Write))
+  {
+    oflag |= O_RDONLY;
+  }
+  else if(!(flags & OS_AccessFlag_Read) && (flags & OS_AccessFlag_Write))
+  {
+    oflag |= O_WRONLY;
+  }
+  else if((flags & OS_AccessFlag_Read) && (flags & OS_AccessFlag_Write))
+  {
+    oflag |= O_RDWR;
+  }
+
+  // TODO(jceipek): What should the semantics be here?
+  if(flags & OS_AccessFlag_Execute) { NotImplemented; }
+
+  // TODO(jceipek): What should the semantics be here?
+  if(flags & OS_AccessFlag_Shared)
+  {
+    oflag |= O_SHLOCK;
+  }
+  else
+  {
+    oflag |= O_EXLOCK;
+  }
+
+  mode_t mode = 0;
+  if (flags & OS_AccessFlag_Read) { mode |= S_IRUSR; }
+  if (flags & OS_AccessFlag_Write) { mode |= S_IWUSR; }
+  if (flags & OS_AccessFlag_Execute) { mode |= S_IXUSR; }
+
+  if(flags & OS_AccessFlag_Write)   { oflag |= O_CREAT; }
+  int fd = open((const char*)path.str, oflag, mode);
+  result.u64[0] = mac_handle_from_file_descriptor(fd);
+  return result;
 }
 
 internal void
 os_file_close(OS_Handle file)
 {
-  NotImplemented;
+  int fd = mac_file_descriptor_from_handle(file);
+  if (fd > -1)
+  {
+    close(fd);
+  }
 }
 
 internal U64
 os_file_read(OS_Handle file, Rng1U64 rng, void *out_data)
 {
-  NotImplemented;
-  return 0;
+  U64 result = 0;
+  int fd = mac_file_descriptor_from_handle(file);
+  if (fd > -1)
+  {
+    ssize_t amount_read = pread(fd, out_data, dim_1u64(rng), rng.min);
+    if (amount_read > 0)
+    {
+      result = (U64)amount_read;
+    }
+  }
+  return result;
 }
 
 internal void
@@ -1054,7 +1111,12 @@ internal FileProperties
 os_properties_from_file(OS_Handle file)
 {
   FileProperties props = {0};
-  NotImplemented;
+  int fd = mac_file_descriptor_from_handle(file);
+  struct stat info;
+  if (fstat(fd, &info) == 0)
+  {
+    mac_file_properties_from_stat(&props, &info);
+  }
   return props;
 }
 
@@ -1137,21 +1199,85 @@ os_file_map_view_close(OS_Handle map, void *ptr)
 internal OS_FileIter *
 os_file_iter_begin(Arena *arena, String8 path, OS_FileIterFlags flags)
 {
-  NotImplemented;
-  return 0;
+  OS_FileIter *iter = push_array(arena, OS_FileIter, 1);
+  iter->flags = flags;
+  MAC_FileIter *mac_iter = (MAC_FileIter*)iter->memory;
+  mac_iter->dir = opendir((const char *)path.str);
+  mac_iter->fd = dirfd(mac_iter->dir);
+  return iter;
 }
 
 internal B32
 os_file_iter_next(Arena *arena, OS_FileIter *iter, OS_FileInfo *info_out)
 {
-  NotImplemented;
-  return 0;
+  B32 result = 0;
+  OS_FileIterFlags flags = iter->flags;
+  MAC_FileIter *mac_iter = (MAC_FileIter*)iter->memory;
+  if (!(flags & OS_FileIterFlag_Done) && mac_iter->dir != NULL)
+  {
+    struct dirent *entry = NULL;
+    do
+    {
+      // check is usable
+      B32 usable_file = 1;
+
+      entry = readdir(mac_iter->dir);
+      if (entry) {
+        char *file_name = entry->d_name;
+        // NOTE(JULIAN): We can't expect this to be useful on all filesystems
+        char file_type = entry->d_type;
+        if (file_name[0] == '.'){
+          if (flags & OS_FileIterFlag_SkipHiddenFiles){
+            usable_file = 0;
+          }
+          else if (file_name[1] == 0){
+            usable_file = 0;
+          }
+          else if (file_name[1] == '.' && file_name[2] == 0){
+            usable_file = 0;
+          }
+        }
+        if (file_type == DT_DIR) {
+          if (flags & OS_FileIterFlag_SkipFolders){
+            usable_file = 0;
+          }
+        }
+        else{ // XXX(JULIAN): What filetype is a "file"?
+          if (flags & OS_FileIterFlag_SkipFiles){
+            usable_file = 0;
+          }
+        }
+
+        // emit if usable
+        if (usable_file){
+          info_out->name = push_str8_copy(arena, str8_cstring(file_name));
+
+          int fd = dirfd(mac_iter->dir);
+          struct stat info;
+          if (fstatat(fd, entry->d_name, &info, 0) == 0)
+          {
+            mac_file_properties_from_stat(&info_out->props, &info);
+          }
+
+          result = 1;
+          if (!readdir(mac_iter->dir)){
+            iter->flags |= OS_FileIterFlag_Done;
+          }
+          break;
+        }
+      }
+    } while((entry = readdir(mac_iter->dir)));
+  }
+  return result;
 }
 
 internal void
 os_file_iter_end(OS_FileIter *iter)
 {
-  NotImplemented;
+  MAC_FileIter *mac_iter = (MAC_FileIter*)iter->memory;
+  if (mac_iter->dir) {
+    closedir(mac_iter->dir);
+  }
 }
 
 //- rjf: directory creation
