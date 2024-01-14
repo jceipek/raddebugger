@@ -42,7 +42,7 @@ if [ "$telemetry" = "1" ]; then auto_compile_flags+=" -DPROFILE_TELEMETRY=1"; ec
 if [ "$asan" = "1" ]     ; then auto_compile_flags+=" -fsanitize=address"; echo "[asan enabled]"; fi
 
 # --- Compile/Link Line Definitions ------------------------------------------
-clang_common="-I../src/ -I../local/ -maes -mssse3 -msse4 -gcodeview -fdiagnostics-absolute-paths -Wall -Wno-missing-braces -Wno-unused-function -Wno-writable-strings -Wno-unused-value -Wno-unused-variable -Wno-unused-local-typedef -Wno-deprecated-register -Wno-deprecated-declarations -Wno-unused-but-set-variable -Wno-single-bit-bitfield-constant-conversion -Xclang -flto-visibility-public-std -D_USE_MATH_DEFINES -Dstrdup=_strdup -Dgnu_printf=printf"
+clang_common="-I../src/ -I../local/ -maes -mssse3 -msse4 -fdiagnostics-absolute-paths -Wall -Wno-missing-braces -Wno-unused-function -Wno-writable-strings -Wno-unused-value -Wno-unused-variable -Wno-unused-local-typedef -Wno-deprecated-register -Wno-deprecated-declarations -Wno-unused-but-set-variable -Wno-single-bit-bitfield-constant-conversion -Xclang -flto-visibility-public-std -D_USE_MATH_DEFINES -Dstrdup=_strdup -Dgnu_printf=printf"
 clang_debug="clang -g -O0 -D_DEBUG $clang_common"
 clang_release="clang -g -O3 -DNDEBUG $clang_common"
 # set clang_link=    -Xlinker /natvis:"%~dp0\src\natvis\base.natvis"
@@ -74,7 +74,7 @@ fi
 
 # --- Build Everything (@build_targets) --------------------------------------
 pushd build
-if [ "$raddbg" = "1" ];            then $compile $gfx "../src/raddbg/raddbg.cpp"                         $compile_link $out "raddbg"; fi
+if [ "$raddbg" = "1" ];            then $compile $gfx "../src/raddbg/raddbg_main.cpp"                    $compile_link $out "raddbg"; fi
 if [ "$raddbg_from_pdb" = "1" ];   then $compile      "../src/raddbg_convert/pdb/raddbg_from_pdb_main.c" $compile_link $out "raddbg_from_pdb"; fi
 if [ "$raddbg_from_dwarf" = "1" ]; then $compile      "../src/raddbg_convert/dwarf/raddbg_from_dwarf.c"  $compile_link $out "raddbg_from_dwarf"; fi
 if [ "$raddbg_dump" = "1" ];       then $compile      "../src/raddbg_dump/raddbg_dump.c"                 $compile_link $out "raddbg_dump"; fi
