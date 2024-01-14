@@ -25,7 +25,7 @@
 #  define ins_atomic_ptr_eval_assign(x,c) (void*)ins_atomic_u64_eval_assign((volatile __int64 *)(x), (__int64)(c))
 # endif
 
-#elif OS_LINUX
+#elif OS_LINUX || OS_MAC
 
 # if ARCH_X64
 #  define ins_atomic_u64_inc_eval(x) __sync_fetch_and_add((volatile U64 *)(x), 1)
