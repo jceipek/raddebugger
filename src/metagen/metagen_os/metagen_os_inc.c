@@ -24,6 +24,8 @@
 # endif
 #elif OS_LINUX
 # include "core/linux/metagen_os_core_linux.c"
+#elif OS_MAC
+# include "core/mac/metagen_os_core_mac.c"
 #else
 # error no OS layer setup
 #endif

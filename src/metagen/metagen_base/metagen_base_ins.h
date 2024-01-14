@@ -31,6 +31,12 @@
 #  define ins_atomic_u64_inc_eval(x) __sync_fetch_and_add((volatile U64 *)(x), 1)
 # endif
 
+#elif OS_MAC
+
+# if ARCH_X64
+#  define ins_atomic_u64_inc_eval(x) __sync_fetch_and_add((volatile U64 *)(x), 1)
+# endif
+
 #else
 // TODO(allen): 
 #endif

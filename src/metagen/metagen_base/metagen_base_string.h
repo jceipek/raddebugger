@@ -94,6 +94,8 @@ typedef enum PathStyle
   PathStyle_SystemAbsolute = PathStyle_WindowsAbsolute
 #elif OS_LINUX
   PathStyle_SystemAbsolute = PathStyle_UnixAbsolute
+#elif OS_MAC
+  PathStyle_SystemAbsolute = PathStyle_UnixAbsolute
 #else
 # error "absolute path style is undefined for this OS"
 #endif
